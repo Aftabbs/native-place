@@ -8,6 +8,7 @@ from __future__ import annotations
 
 import json
 import sys
+from dataclasses import replace
 from pathlib import Path
 
 from . import (
@@ -48,6 +49,12 @@ def main() -> int:
     index = tag.station_index(RAW / "tag2026" / "Station_Code_Index.pdf", official_names)
     station_rows = [{"code": s.code, "name": s.name, "lon": s.lon, "lat": s.lat} for s in gazetteer]
     tag_trains, tag_report = tag.parse(RAW / "tag2026" / "tables.json", index, station_rows)
+    station_name = {s.code: trains.tidy_name(official_names.get(s.code) or s.name) for s in gazetteer}
+    tag_report["train_names_rebuilt"] = sum(1 for t in tag_trains if tag.name_damage(t.name))
+    tag_trains = [
+        replace(t, name=tag.readable_name(t.name, station_name[t.stops[0][0]], station_name[t.stops[-1][0]]))
+        for t in tag_trains
+    ]
     trips, train_report = trains.from_tag(tag_trains, located)
     train_report = {
         "timetable": "Trains at a Glance 2026",

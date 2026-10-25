@@ -311,7 +311,7 @@ def read_table(
             for number in numbers_in_col:
                 out[number].append(columns[col])
                 if names is not None and col < len(name_row) and name_row[col]:
-                    names.setdefault(number, " ".join(name_row[col].split()))
+                    names.setdefault(number, []).append(" ".join(name_row[col].split()))
                 if info is not None:
                     _record_info(info, number, col, header)
     return out
@@ -541,13 +541,52 @@ def _plausible(stops, gazetteer: Gazetteer) -> bool:
     return span <= MAX_JOURNEY_H
 
 
+# Lower-case words that belong in a train's name ("Bhagat ki Kothi", "via Gaya").
+NAME_LOWER_WORDS = {"ki", "ka", "ke", "via", "and", "of"}
+
+
+def name_damage(name: str) -> int:
+    """How broken a printed train name looks. A narrow name cell often picks up pieces of
+    its neighbours' names ("nai Chennai ore Egmore ottai Madurai"), so count the pieces:
+    words starting in lower case, and characters the PDF could not decode."""
+    words = name.split()
+    pieces = sum(1 for w in words if w[0].islower() and w.lower().strip(".,()") not in NAME_LOWER_WORDS)
+    return pieces + name.count("�")
+
+
+# Train types, longest first, so "Jan Shatabdi" is not read as "Shatabdi".
+TRAIN_TYPES = (
+    "Vande Bharat", "Jan Shatabdi", "Garib Rath", "Amrit Bharat", "Antyodaya", "Humsafar",
+    "Rajdhani", "Shatabdi", "Duronto", "Tejas", "Uday", "Mail",
+)
+
+
+def readable_name(name: str, origin: str, destination: str) -> str:
+    """A damaged printed name, rebuilt from where the train runs and the type of train
+    that can still be read in it: 'Chennai Egmore - Madurai Jn. Tejas Express'. A wrong
+    name would be worse than this plain one, and the number identifies the train."""
+    if not name_damage(name):
+        return name
+    kind = next((t for t in TRAIN_TYPES if re.search(rf"\b{t}\b", name)), "")
+    suffix = kind if kind == "Mail" else f"{kind} Express".strip()
+    return f"{origin} - {destination} {suffix}"
+
+
+def best_name(candidates: list[str], number: str) -> str:
+    """The cleanest of the names printed for a train across all the tables it appears in;
+    the earliest one wins a tie."""
+    if not candidates:
+        return number
+    return min(candidates, key=name_damage)
+
+
 def parse(
     tables_json: Path, index: dict[str, str], stations: list[dict]
 ) -> tuple[list[TagTrain], dict]:
     report: Counter = Counter()
     files = json.loads(tables_json.read_text(encoding="utf-8"))["files"]
     segments: dict[str, list[list[Cell]]] = defaultdict(list)
-    names: dict[str, str] = {}
+    names: dict[str, list[str]] = {}
     info: dict[str, dict] = {}
     for pages in files.values():
         for page in pages:
@@ -578,7 +617,7 @@ def parse(
         trains.append(
             TagTrain(
                 number,
-                names.get(number, number),
+                best_name(names.get(number, []), number),
                 details.get("days"),
                 details.get("classes", []),
                 matched,

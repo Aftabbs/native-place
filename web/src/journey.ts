@@ -72,19 +72,28 @@ export function stationsFor(place: Place, data: ExploreData, wider = false): End
   const all: [string, number][] = [];
   // A town is one point, not a whole district: only a main station in the town itself is its own.
   const town = place.kind === 'town';
+  // A station just over the district line is still close, but not free: it pays its road
+  // distance, or Kodaikanal Road would beat Madurai Jn for Madurai.
+  const across = new Map<string, number>();
   for (const [code, [, lon, lat, district]] of Object.entries(data.stations)) {
     const km = haversineKm(place.lon, place.lat, lon, lat);
-    const own = town ? km <= IN_TOWN_KM : (district != null && inside.has(district)) || km <= NEAR_KM;
-    if (!place.station && own) codes.add(code);
-    else if (!codes.has(code)) all.push([code, km]);
+    const inDistrict = district != null && inside.has(district);
+    const own = town ? km <= IN_TOWN_KM : inDistrict || km <= NEAR_KM;
+    if (!place.station && own) {
+      codes.add(code);
+      if (!town && !inDistrict) across.set(code, km);
+    } else if (!codes.has(code)) all.push([code, km]);
   }
-  if (codes.size && !wider) return { codes, own: codes.size };
+  if (codes.size && !wider) {
+    const roadKm = across.size ? new Map([...codes].map((c) => [c, across.get(c) ?? 0])) : undefined;
+    return { codes, own: codes.size, roadKm };
+  }
   // A small halt may be nearest; a bigger station a little further on often has the trains.
   all.sort((x, y) => x[1] - y[1]);
   const limit = codes.size ? WIDER_KM : Math.min(RAILHEAD_KM, (all[0]?.[1] ?? 0) + WIDER_KM);
   const nearby = all.filter(([, km]) => km <= limit).slice(0, RAILHEAD_CANDIDATES);
   const roadKm = new Map<string, number>(nearby);
-  for (const code of codes) roadKm.set(code, 0);
+  for (const code of codes) roadKm.set(code, across.get(code) ?? 0);
   return { codes: new Set([...codes, ...nearby.map(([c]) => c)]), own: codes.size, roadKm };
 }
 

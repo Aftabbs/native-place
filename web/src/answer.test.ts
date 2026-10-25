@@ -78,6 +78,15 @@ describe('journeys', () => {
     expect(journey.kind).toBe('direct');
     expect(journey.toRailhead!.km).toBeLessThan(150);
   });
+
+  it.each([
+    ['Chennai', 'Madurai', 'MDU'],
+    ['Mumbai', 'Gorakhpur', 'GKP'],
+  ])('prefers a station in the district over one just across its line: %s to %s', (from, to, code) => {
+    const [o] = findJourney(place(from), place(to), explore, '2026-11-06').options;
+    const last = o.legs[o.legs.length - 1];
+    expect(last.train.stops[last.alight][0]).toBe(code);
+  });
 });
 
 describe('answers', () => {

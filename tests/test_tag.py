@@ -1,6 +1,17 @@
 from collections import Counter
 
-from ghar.tag import Gazetteer, _absolute, _days, _split_block, _union, normalise, read_table
+from ghar.tag import (
+    Gazetteer,
+    _absolute,
+    _days,
+    _split_block,
+    _union,
+    best_name,
+    name_damage,
+    normalise,
+    read_table,
+    readable_name,
+)
 
 
 def test_normalise_lines_up_spellings():
@@ -34,7 +45,7 @@ def test_reads_each_train_column_with_arrival_and_departure():
     jammu = trains["13151"][0]
     assert [c.station for c in jammu] == ["Kolkata", "Asansol", "Dhanbad"]
     assert jammu[-1].times == [("a", 16 * 60 + 50), ("d", 16 * 60 + 55)]
-    assert names["13151"] == "Kolkata Jammu Express"
+    assert names["13151"] == ["Kolkata Jammu Express"]
 
 
 def test_join_keeps_travel_order_when_segments_overlap():
@@ -84,3 +95,26 @@ def test_days_of_running():
     assert _days("W,Th,\nSu") == ["Wed", "Thu", "Sun"]
     assert _days("Except W") == ["Mon", "Tue", "Thu", "Fri", "Sat", "Sun"]
     assert _days("") is None
+
+
+def test_damaged_train_names_are_found():
+    assert name_damage("nai Chennai ore Egmore ottai Madurai Tejas igai Express ess") > 0
+    assert name_damage("Daund Nizam� abad Express") > 0
+    assert name_damage("Bhagat ki Kothi Pune Express") == 0
+    assert name_damage("New Delhi Howrah Poorva Express (via Gaya)") == 0
+
+
+def test_cleanest_printed_name_wins():
+    assert best_name(["owrah Poorva Express", "New Delhi Howrah Poorva Express"], "12382") == (
+        "New Delhi Howrah Poorva Express"
+    )
+    assert best_name([], "12382") == "12382"
+
+
+def test_damaged_name_is_rebuilt_from_the_route():
+    damaged = "nai Chennai ore Egmore ottai Madurai Tejas igai Express ess"
+    assert readable_name(damaged, "Chennai Egmore", "Madurai Jn.") == "Chennai Egmore - Madurai Jn. Tejas Express"
+    assert readable_name("m New Guwahati Jorhat xpress Town Jan Shatabdi", "Guwahati", "Jorhat Town") == (
+        "Guwahati - Jorhat Town Jan Shatabdi Express"
+    )
+    assert readable_name("Mysuru Darbhanga Bagmati Express", "Mysuru", "Darbhanga") == "Mysuru Darbhanga Bagmati Express"

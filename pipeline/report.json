@@ -100,6 +100,7 @@
     "stops_unmatched_far": 57,
     "trains_found": 3576,
     "trains_out": 2626,
+    "train_names_rebuilt": 345,
     "points_respaced": 2,
     "long_distance_trains": 1465,
     "points_out": 42408,
@@ -173,7 +174,7 @@
     },
     {
       "file": "explore.json",
-      "bytes": 878970
+      "bytes": 877141
     },
     {
       "folder": "towns",
