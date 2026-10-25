@@ -113,8 +113,14 @@ def test_cleanest_printed_name_wins():
 
 def test_damaged_name_is_rebuilt_from_the_route():
     damaged = "nai Chennai ore Egmore ottai Madurai Tejas igai Express ess"
-    assert readable_name(damaged, "Chennai Egmore", "Madurai Jn.") == "Chennai Egmore - Madurai Jn. Tejas Express"
-    assert readable_name("m New Guwahati Jorhat xpress Town Jan Shatabdi", "Guwahati", "Jorhat Town") == (
-        "Guwahati - Jorhat Town Jan Shatabdi Express"
+    assert (
+        readable_name(damaged, "Chennai Egmore", "Madurai Jn.")
+        == "Chennai Egmore - Madurai Jn. Tejas Express"
     )
-    assert readable_name("Mysuru Darbhanga Bagmati Express", "Mysuru", "Darbhanga") == "Mysuru Darbhanga Bagmati Express"
+    assert readable_name(
+        "m New Guwahati Jorhat xpress Town Jan Shatabdi", "Guwahati", "Jorhat Town"
+    ) == ("Guwahati - Jorhat Town Jan Shatabdi Express")
+    assert (
+        readable_name("Mysuru Darbhanga Bagmati Express", "Mysuru", "Darbhanga")
+        == "Mysuru Darbhanga Bagmati Express"
+    )

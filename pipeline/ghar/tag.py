@@ -550,14 +550,26 @@ def name_damage(name: str) -> int:
     its neighbours' names ("nai Chennai ore Egmore ottai Madurai"), so count the pieces:
     words starting in lower case, and characters the PDF could not decode."""
     words = name.split()
-    pieces = sum(1 for w in words if w[0].islower() and w.lower().strip(".,()") not in NAME_LOWER_WORDS)
+    pieces = sum(
+        1 for w in words if w[0].islower() and w.lower().strip(".,()") not in NAME_LOWER_WORDS
+    )
     return pieces + name.count("�")
 
 
 # Train types, longest first, so "Jan Shatabdi" is not read as "Shatabdi".
 TRAIN_TYPES = (
-    "Vande Bharat", "Jan Shatabdi", "Garib Rath", "Amrit Bharat", "Antyodaya", "Humsafar",
-    "Rajdhani", "Shatabdi", "Duronto", "Tejas", "Uday", "Mail",
+    "Vande Bharat",
+    "Jan Shatabdi",
+    "Garib Rath",
+    "Amrit Bharat",
+    "Antyodaya",
+    "Humsafar",
+    "Rajdhani",
+    "Shatabdi",
+    "Duronto",
+    "Tejas",
+    "Uday",
+    "Mail",
 )
 
 
