@@ -33,6 +33,10 @@ every figure.
   and how many people from home live where you do (Census 2011).
 - **A card to share** with every line sourced, and a link that opens the same answer. Shared
   links show a preview image on WhatsApp and social apps.
+- **A page per popular route.** [/train/](https://native-place.pages.dev/train/) lists about
+  370 city-to-hometown routes (Bengaluru to Patna, Delhi to Darbhanga), each a static page
+  built at `npm run build` from the same answers, so search engines can find them. The build
+  also writes `sitemap.xml` and `robots.txt`.
 - **The map.** Every train in the timetable moving across one day in 60 seconds; your route
   lights up and the rest dims. Explore mode adds satellite imagery and tap-for-details panels
   for trains, stations, districts and states.
