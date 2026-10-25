@@ -21,6 +21,20 @@
     <meta property="og:image:height" content="630" />
     <meta property="og:image:alt" content="Native Place: a dark map of India full of moving trains, with a search from Bengaluru to Patna" />
     <meta name="twitter:card" content="summary_large_image" />
+    <script type="application/ld+json">
+      {
+        "@context": "https://schema.org",
+        "@type": "WebApplication",
+        "name": "Native Place",
+        "url": "https://native-place.pages.dev/",
+        "description": "Find the train from any town in India to your hometown: fastest train, fare range and this season's special trains, from the official 2026 timetable.",
+        "applicationCategory": "TravelApplication",
+        "operatingSystem": "Any",
+        "inLanguage": "en-IN",
+        "isAccessibleForFree": true,
+        "offers": { "@type": "Offer", "price": "0", "priceCurrency": "INR" }
+      }
+    </script>
     <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><circle cx='16' cy='16' r='14' fill='%230b1020'/><circle cx='16' cy='16' r='5' fill='%23ffb347'/></svg>" />
     <!-- Count page views without the ?from=&to= places a shared link carries. -->
     <script>window.goatcounter = { path: () => location.pathname };</script>
@@ -85,7 +99,7 @@
             <button id="explore" type="button" aria-pressed="false">Explore</button>
           </div>
           <p id="status" class="status" role="status" aria-live="polite">Loading trains…</p>
-          <p class="small">Official timetable: Trains at a Glance 2026. Weekly trains are shown every day. <a href="methods.html">How this was made</a></p>
+          <p class="small">Official timetable: Trains at a Glance 2026. Weekly trains are shown every day. <a href="methods.html">How this was made</a> · <a href="train/">Popular routes</a></p>
         </div>
       </section>
 
