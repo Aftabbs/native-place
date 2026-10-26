@@ -121,9 +121,9 @@
     "explore_stations": 867
   },
   "specials": {
-    "rows_in": 153,
-    "rows_out": 153,
-    "with_journey_time": 130,
+    "rows_in": 167,
+    "rows_out": 167,
+    "with_journey_time": 144,
     "problems": []
   },
   "files": [

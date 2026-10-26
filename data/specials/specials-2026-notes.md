@@ -115,3 +115,16 @@ Verified on 2026-10-17. There are 113 rows in `specials-2026.csv`, one per train
 - **NFR.** The first index page showed no festival specials.
 - **ECR.** There is still no press-release section on the site, and `id=0,4,268` returns an empty page. ECR posts specials on X (@ECRlyHJP), which is not an official notice page, so nothing was taken from there.
 - **Checks.** A script checked every first and last date against the run days before appending.
+
+### Same day: newer NR notices and SWR 303
+
+The watcher (`python -m ghar.watch_specials`) found these NR notices from after 17 Oct, and they were added (14 rows, 167 in all):
+
+- **NR `dcd=13238` and `dcd=13284`.** New Delhi-Patna Vande Bharat specials 02252/02251 and 02253/02254. Between the two pairs, a train runs every day.
+- **NR `dcd=13234`.** 04406/04405 Shakur Basti-Mansi, unreserved, on listed dates in November.
+- **NR `dcd=13274`.** 08407/08408 Khurda Road-Anand Vihar, two trips; and 01045/01046 LTT-Ayodhya Cantt, an Amrit Bharat rake.
+- **NR `dcd=13282`.** 01913/01914 Khajuraho-Hazrat Nizamuddin, tri-weekly.
+- **NR `dcd=13288`.** A summary of trip counts that lists no new trains. Not used.
+- **SWR PR 303 (`dcd=9748`).** 06211/06212 Mysuru-Darbhanga, weekly. The text is an inline image, read by eye. The train also stops at KSR Bengaluru and Yesvantpur, but the site matches a special only by its first and last station, so a Bengaluru search does not show it yet.
+
+The other festival notices still to read are in `backlog.md`.
