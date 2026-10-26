@@ -40,7 +40,7 @@ describe('festival specials', () => {
     const s = summary(specials);
     expect(s.total).toBe(specials.length);
     expect(s.homeward).toBe(specials.filter(isHomeward).length);
-    expect(s.verifiedOn).toBe('2026-10-17');
+    expect(s.verifiedOn).toBe(specials.map((x) => x.verified).sort().at(-1));
   });
 });
 

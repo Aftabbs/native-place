@@ -100,3 +100,18 @@ Verified on 2026-10-17. There are 113 rows in `specials-2026.csv`, one per train
 - **No Ahmedabad, Delhi-NZM-to-Bihar, or Chennai-to-Bihar specials** were found.
 - **WR (Udhna/Mumbai Central) rows have no timings.**
 - **No Bengaluru specials to Assam/Bengal beyond those listed:** Rangapara North, New Tinsukia, Malda Town and Santragachi-Yelahanka.
+
+## Update 2026-10-26: North Eastern and Eastern Railway
+
+40 rows were added (153 in all). Both zones publish releases as plain text on `view_detail.jsp`, so nothing was read from images.
+
+- **NER (Gorakhpur).** Press release index: https://ner.indianrailways.gov.in/view_section.jsp?lang=0&id=0,4,268. The releases are in Hindi.
+  - Used (`dcd=`): 6044, 6056, 6058, 6060, 6062, 6064, 6078, 6080, 6082, 6084, 6086, 6090.
+  - 04014/04013 and 04410/04409 were already listed from NR notices. The NER notices give the same times and dates, so nothing changed.
+  - Not used: 6046. It only extends 05045/05046 (Lalkuan-Rajkot) and 05193/05194 (Chhapra-Pathankot) "on existing timings", and gives no timings or start dates.
+  - 01208: the notice says "every Friday" but prints 22 Oct to 12 Nov, which are Thursdays. The row uses the Fridays, because the 03:00 departure follows 01207's Thursday 23:45 arrival. The row says so.
+  - 09111/09112: the notice's dateline reads 2025, but every run date is 2026.
+- **ER (Kolkata).** `dcd=11390` (12 Sep 2026): ten Puja special pairs, 20 rows.
+- **NFR.** The first index page showed no festival specials.
+- **ECR.** There is still no press-release section on the site, and `id=0,4,268` returns an empty page. ECR posts specials on X (@ECRlyHJP), which is not an official notice page, so nothing was taken from there.
+- **Checks.** A script checked every first and last date against the run days before appending.
