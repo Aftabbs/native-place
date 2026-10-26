@@ -78,6 +78,29 @@ test('a place with no railway gets the nearest station, not a blank', async ({ p
   await expect(page.locator('.steps li')).not.toHaveCount(0);
 });
 
+test('the page and the answer switch to Hindi and back, and pass accessibility checks', async ({ page }) => {
+  await page.goto('./?from=Bengaluru&to=Darbhanga&date=2030-11-08');
+  await expect(page.locator('#result-title')).toContainText('Bengaluru → Darbhanga', { timeout: 30_000 });
+  await page.getByRole('button', { name: 'हिन्दी में देखें' }).click();
+  await expect(page.locator('html')).toHaveAttribute('lang', 'hi');
+  await expect(page.locator('h1')).toHaveText('अपने घर की ट्रेन ढूँढें');
+  await expect(page.locator('.headline')).toContainText('को');
+  await expect(page.locator('#find')).toHaveText('मेरी ट्रेन दिखाएँ');
+  expect(page.url()).toContain('lang=hi');
+  const results = await new AxeBuilder({ page })
+    .withTags(['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa', 'wcag22aa'])
+    .analyze();
+  expect(results.violations.map((v) => `${v.id}: ${v.help}`)).toEqual([]);
+
+  await page.getByRole('button', { name: 'View in English' }).click();
+  await expect(page.locator('h1')).toHaveText('Find the train to your hometown');
+  await expect(page.locator('.headline')).toContainText('on');
+  // The choice is remembered on the next visit.
+  await page.getByRole('button', { name: 'हिन्दी में देखें' }).click();
+  await page.goto('./');
+  await expect(page.locator('#find')).toHaveText('मेरी ट्रेन दिखाएँ');
+});
+
 for (const path of ['./', './methods.html']) {
   test(`no WCAG 2.2 AA violations on ${path}`, async ({ page }) => {
     await page.goto(path);

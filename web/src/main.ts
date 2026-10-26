@@ -17,8 +17,14 @@ import {
   panelFor,
   renderPanel,
 } from './exploreUi';
+import { lang, ui as t, words } from './i18n';
+import { setupLanguageSwitch } from './pageText';
 import { type Route, setupSearch, warmSearch } from './search';
 import './style.css';
+
+setupLanguageSwitch();
+// Which legend is showing, so a language switch can rewrite it.
+let legend: 'legend' | 'legendRoute' | 'legendRoad' = 'legend';
 
 const DATA = `${import.meta.env.BASE_URL}data/`;
 // Wherever the site is served from, without the protocol: printed on every card.
@@ -322,13 +328,12 @@ function showRoute(route: Route | null) {
     // No fly-in for reduced motion or a background tab, where animation frames are paused.
     const animate = !reducedMotion && !document.hidden;
     deck.setProps({ initialViewState: animate ? { ...view, transitionDuration: 900, transitionInterpolator: new FlyToInterpolator() } : view });
-    ui.legend.textContent = route.roads.length
-      ? 'Your train in gold, the road part in pale gold. Every other train is dimmed.'
-      : 'Your train in gold. Every other train is dimmed.';
+    legend = route.roads.length ? 'legendRoad' : 'legendRoute';
   } else {
     deck.setProps({ initialViewState: initialView() });
-    ui.legend.textContent = 'Every light is a train in the 2026 timetable, starting at the time in India now. A day passes in 60 seconds.';
+    legend = 'legend';
   }
+  ui.legend.textContent = t()[legend];
   render();
 }
 
@@ -428,7 +433,7 @@ function updateText(force = false) {
   if (ui.time.value !== slider && document.activeElement !== ui.time) ui.time.value = slider;
   if (state.long) {
     const moving = activeTrips(state.long, state.minute) + (state.rest ? activeTrips(state.rest, state.minute) : 0);
-    setText(ui.live, `${moving.toLocaleString('en-IN')} trains on the move at ${label}`);
+    setText(ui.live, t().moving(moving.toLocaleString('en-IN'), label));
   }
 }
 
@@ -468,7 +473,7 @@ function frame(now: number) {
       slowFrames = elapsed > SLOW_FRAME_MS ? slowFrames + 1 : Math.max(0, slowFrames - 1);
       if (slowFrames > 90) {
         state.light = true;
-        ui.status.textContent = 'Showing long-distance trains only, to keep this device smooth.';
+        ui.status.textContent = t().longOnly;
       }
     }
     render();
@@ -479,7 +484,7 @@ function frame(now: number) {
 function setFestival(on: boolean) {
   state.festival = on;
   ui.festival.setAttribute('aria-pressed', String(on));
-  ui.festival.textContent = on ? 'Hide them' : 'Show them on the map';
+  ui.festival.textContent = on ? t().hideThem : t().showOnMap;
   render();
 }
 
@@ -489,16 +494,26 @@ function showSeason(specials: Special[]) {
   if (!running.length) return;
   const homeward = running.filter(isHomeward).length;
   const { zones, checked } = coverage(specials);
-  const day = new Intl.DateTimeFormat('en-IN', { day: 'numeric', month: 'short' }).format(new Date(checked));
-  ui.seasonText.textContent = `${running[0].season}: ${homeward} verified special trains from the big cities, from ${zones} railway zones' notices (checked ${day}). More may run.`;
+  const w = words(lang());
+  const [, month, date] = checked.split('-').map(Number);
+  ui.seasonText.textContent = t().seasonLine(w.season(running[0].season), homeward, zones, `${date} ${w.month(month - 1)}`);
   ui.season.hidden = false;
 }
 
 function setPlaying(playing: boolean) {
   state.playing = playing;
-  ui.play.textContent = playing ? 'Pause' : 'Play';
+  ui.play.textContent = playing ? t().pause : t().play;
   ui.play.setAttribute('aria-pressed', String(playing));
 }
+
+// The words main.ts owns: legend, play button, special-train strip.
+document.addEventListener('langchange', () => {
+  ui.legend.textContent = t()[legend];
+  setPlaying(state.playing);
+  ui.festival.textContent = state.festival ? t().hideThem : t().showOnMap;
+  showSeason(state.specials);
+  updateText(true);
+});
 
 ui.play.addEventListener('click', () => setPlaying(!state.playing));
 ui.festival.addEventListener('click', () => setFestival(!state.festival));
@@ -554,11 +569,8 @@ async function start() {
     });
     render();
     const moving = activeTrips(long, state.minute);
-    ui.status.textContent = reducedMotion ? 'Animation paused because reduced motion is on. Press Play to start.' : '';
-    ui.summary.textContent =
-      `The map animates ${long.length.toLocaleString('en-IN')} long-distance train runs from Trains at a ` +
-      `Glance 2026, the official Indian Railways timetable, across one day compressed into 60 seconds. At ` +
-      `${clockLabel(state.minute)}, about ${moving.toLocaleString('en-IN')} long-distance trains are on the move.`;
+    ui.status.textContent = reducedMotion ? t().reduced : '';
+    ui.summary.textContent = t().summary(long.length.toLocaleString('en-IN'), clockLabel(state.minute), moving.toLocaleString('en-IN'));
     state.rest = await loadTrips(`${DATA}trains-rest.bin`);
     render();
     document.body.dataset.ready = 'true'; // for scripted checks
@@ -567,7 +579,7 @@ async function start() {
     const idle = window.requestIdleCallback ?? ((fn: () => void) => setTimeout(fn, 500));
     idle(() => void warmSearch(), { timeout: 1000 });
   } catch (error) {
-    ui.status.textContent = 'The train data could not be loaded. Please refresh the page.';
+    ui.status.textContent = t().loadFailed;
     console.error(error);
   }
   requestAnimationFrame(frame);

@@ -49,32 +49,35 @@
 
       <section class="panel" aria-labelledby="site-title">
         <header class="title">
-          <p class="brand"><span class="dot" aria-hidden="true"></span>Native Place <span class="brand-aside">· going to native?</span></p>
-          <h1 id="site-title">Find the train to your <span class="accent">hometown</span></h1>
-          <p class="tagline">See which train to take, the days it runs and what it costs, from the official 2026 railway timetable.</p>
+          <div class="brand-row">
+            <p class="brand"><span class="dot" aria-hidden="true"></span>Native Place <span class="brand-aside" data-i18n="brandAside">· going to native?</span></p>
+            <button id="lang" type="button" class="lang" lang="hi" aria-label="हिन्दी में देखें">हिन्दी</button>
+          </div>
+          <h1 id="site-title"><span data-i18n="title">Find the train to your</span> <span class="accent" data-i18n="titleAccent">hometown</span></h1>
+          <p class="tagline" data-i18n="tagline">See which train to take, the days it runs and what it costs, from the official 2026 railway timetable.</p>
         </header>
 
         <form id="search" class="search" role="search" aria-label="Find a train">
           <div class="field">
-            <label for="from"><span class="step" aria-hidden="true">1</span> Where do you live?</label>
-            <input id="from" name="from" autocomplete="off" spellcheck="false" placeholder="City, town or station, e.g. Bengaluru" required />
+            <label for="from"><span class="step" aria-hidden="true">1</span> <span data-i18n="fromLabel">Where do you live?</span></label>
+            <input id="from" name="from" autocomplete="off" spellcheck="false" data-i18n-placeholder="fromPlaceholder" placeholder="City, town or station, e.g. Bengaluru" required />
           </div>
-          <button id="swap" type="button" class="swap" aria-label="Swap the two places">⇅</button>
+          <button id="swap" type="button" class="swap" data-i18n-aria="swap" aria-label="Swap the two places">⇅</button>
           <div class="field">
-            <label for="to"><span class="step" aria-hidden="true">2</span> Where is home?</label>
-            <input id="to" name="to" autocomplete="off" spellcheck="false" placeholder="Town, district or station, e.g. Kadur" required />
+            <label for="to"><span class="step" aria-hidden="true">2</span> <span data-i18n="toLabel">Where is home?</span></label>
+            <input id="to" name="to" autocomplete="off" spellcheck="false" data-i18n-placeholder="toPlaceholder" placeholder="Town, district or station, e.g. Kadur" required />
           </div>
           <div class="field when">
-            <label for="when"><span class="step" aria-hidden="true">3</span> When? <span class="hint">optional</span></label>
+            <label for="when"><span class="step" aria-hidden="true">3</span> <span data-i18n="whenLabel">When?</span> <span class="hint" data-i18n="optional">optional</span></label>
             <input id="when" name="when" type="date" />
           </div>
-          <button id="find" type="submit" class="primary find">Show my train</button>
-          <p class="trust small">Free · no sign-up · official railway timetable · book on IRCTC</p>
+          <button id="find" type="submit" class="primary find" data-i18n="find">Show my train</button>
+          <p class="trust small" data-i18n="trust">Free · no sign-up · official railway timetable · book on IRCTC</p>
           <p id="search-hint" class="small" aria-live="polite"></p>
         </form>
 
         <div class="examples" role="group" aria-labelledby="examples-label">
-          <span id="examples-label" class="small">Or see an example:</span>
+          <span id="examples-label" class="small" data-i18n="examples">Or see an example:</span>
           <button type="button" class="chip" data-from="Bengaluru" data-to="Patna">Bengaluru → Patna</button>
           <button type="button" class="chip" data-from="Mumbai" data-to="Lucknow">Mumbai → Lucknow</button>
           <button type="button" class="chip" data-from="Chennai" data-to="Madurai">Chennai → Madurai</button>
@@ -94,13 +97,13 @@
           <div class="controls">
             <button id="play" type="button" aria-pressed="true">Pause</button>
             <label class="scrub">
-              <span class="visually-hidden">Time of day</span>
+              <span class="visually-hidden" data-i18n="timeOfDay">Time of day</span>
               <input id="time" type="range" min="0" max="1439" step="1" value="0" />
             </label>
-            <button id="explore" type="button" aria-pressed="false">Explore</button>
+            <button id="explore" type="button" aria-pressed="false" data-i18n="explore">Explore</button>
           </div>
           <p id="status" class="status" role="status" aria-live="polite">Loading trains…</p>
-          <p class="small">Official timetable: Trains at a Glance 2026. Weekly trains are shown every day. <a href="methods.html">How this was made</a> · <a href="train/">Popular routes</a></p>
+          <p class="small"><span data-i18n="timetableLine">Official timetable: Trains at a Glance 2026. Weekly trains are shown every day.</span> <a href="methods.html" data-i18n="methods">How this was made</a> · <a href="train/" data-i18n="routes">Popular routes</a></p>
         </div>
       </section>
 

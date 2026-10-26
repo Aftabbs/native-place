@@ -4,6 +4,7 @@
 import type { Migration, RailTravel } from './card';
 import { CLASS_NAMES, clock, type ExploreData, fareRanges, type FareData, hours, trainLabel } from './explore';
 import type { Special } from './festival';
+import { type Lang, type Words, words } from './i18n';
 import { findJourney, haversineKm, type Journey, legKm, NO_RAILWAY, type Option, weekday } from './journey';
 import { type Place, spoken } from './places';
 
@@ -50,15 +51,14 @@ export interface Context {
   travel: RailTravel;
   today: string; // YYYY-MM-DD; specials that have stopped running are left out
   date?: string; // YYYY-MM-DD the traveller wants to leave, if they chose one
+  lang?: Lang; // English unless asked
 }
 
-const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
-
 /** "Thu 30 Oct" for a YYYY-MM-DD date moved by whole days. */
-export function dayLabel(date: string, plusDays = 0): string {
+export function dayLabel(date: string, plusDays = 0, w: Words = words()): string {
   const d = new Date(`${date}T00:00:00Z`);
   d.setUTCDate(d.getUTCDate() + plusDays);
-  return `${weekday(date, plusDays)} ${d.getUTCDate()} ${MONTHS[d.getUTCMonth()]}`;
+  return `${w.weekday(weekday(date, plusDays))} ${d.getUTCDate()} ${w.month(d.getUTCMonth())}`;
 }
 
 const rupees = (n: number) => `₹${n.toLocaleString('en-IN')}`;
@@ -67,12 +67,12 @@ function stationName(code: string, data: ExploreData): string {
   return data.stations[code]?.[0] ?? code;
 }
 
-function days(list: string[]): string {
-  if (!list.length || list.includes('Daily')) return list.length ? 'Daily' : 'Days not listed';
-  return `Runs ${list.join(', ')}`;
+function days(list: string[], w: Words): string {
+  if (!list.length || list.includes('Daily')) return list.length ? w.daily : w.daysNotListed;
+  return w.runs(list.map(w.weekday).join(', '));
 }
 
-function steps(option: Option, data: ExploreData, date?: string): Step[] {
+function steps(option: Option, data: ExploreData, w: Words, date?: string): Step[] {
   let boardDay = 0; // days after the chosen date that each leg leaves
   return option.legs.map((l, i) => {
     const day = Math.floor(l.arr / 1440) - Math.floor(l.dep / 1440);
@@ -81,14 +81,14 @@ function steps(option: Option, data: ExploreData, date?: string): Step[] {
       boardDay = Math.floor(((a.dep % 1440) + (a.arr - a.dep) + (option.wait ?? 0)) / 1440);
     }
     return {
-      when: date ? dayLabel(date, boardDay) : undefined,
+      when: date ? dayLabel(date, boardDay, w) : undefined,
       train: trainLabel(l.train),
       from: stationName(l.train.stops[l.board][0], data),
       to: stationName(l.train.stops[l.alight][0], data),
       dep: clock(l.dep),
-      arr: `${clock(l.arr)}${day > 0 ? ` (+${day} day${day > 1 ? 's' : ''})` : ''}`,
-      duration: hours(l.arr - l.dep),
-      days: days(l.train.days),
+      arr: `${clock(l.arr)}${day > 0 ? w.plusDays(day) : ''}`,
+      duration: hours(l.arr - l.dep, w),
+      days: days(l.train.days, w),
     };
   });
 }
@@ -128,47 +128,43 @@ export function specialsFor(from: Place, to: Place, ctx: Pick<Context, 'specials
   );
 }
 
-function notes(journey: Journey, from: Place, to: Place, data: ExploreData): string[] {
+function notes(journey: Journey, from: Place, to: Place, data: ExploreData, w: Words): string[] {
   const out: string[] = [];
   for (const [place, railhead] of [
     [from, journey.fromRailhead],
     [to, journey.toRailhead],
   ] as const) {
     if (!railhead) continue;
-    const station = `${stationName(railhead.code, data)} (${railhead.code}), about ${railhead.km.toLocaleString('en-IN')} km away in a straight line`;
-    let note = `No station in ${place.name} is in the main timetable. The nearest useful one is ${station}.`;
-    if (place.localStation) {
-      note = `${place.name} station is not a main stop in the official timetable, so this uses ${station}. Some trains may stop at ${place.name} too: check on NTES or IRCTC.`;
-    }
-    if (NO_RAILWAY.has(place.state)) note = `There is no railway in ${spoken(place.state)} yet. The nearest station is ${station}.`;
-    else if (railhead.hasOwn) note = `Trains from ${place.name} itself do not connect well. The quickest way is from ${station}.`;
+    const station = w.station(stationName(railhead.code, data), railhead.code, railhead.km.toLocaleString('en-IN'));
+    let note = w.noStationIn(place.name, station);
+    if (place.localStation) note = w.localStation(place.name, station);
+    if (NO_RAILWAY.has(place.state)) note = w.noRailway(w.state(spoken(place.state)), station);
+    else if (railhead.hasOwn) note = w.connectBadly(place.name, station);
     out.push(note);
   }
   return out;
 }
 
-function headline(journey: Journey, from: Place, to: Place, data: ExploreData): string {
-  const on = journey.date ? ` on ${dayLabel(journey.date)}` : '';
-  if (journey.dateMiss) {
-    return `No train runs${on}. These run on other days`;
-  }
-  if (journey.kind === 'direct' && on) return `Fastest direct train${on}`;
-  if (journey.kind === 'direct') return journey.options.length > 1 ? 'Fastest direct train' : 'Direct train';
+function headline(journey: Journey, from: Place, to: Place, data: ExploreData, w: Words): string {
+  const on = journey.date ? w.on(dayLabel(journey.date, 0, w)) : '';
+  if (journey.dateMiss) return w.noTrainOn(on);
+  if (journey.kind === 'direct' && on) return w.fastestDirectOn(on);
+  if (journey.kind === 'direct') return journey.options.length > 1 ? w.fastestDirect : w.direct;
   if (journey.kind === 'change') {
     const at = journey.options[0].legs[0].train.stops[journey.options[0].legs[0].alight][0];
-    return `No direct train${on}. Quickest with one change, at ${stationName(at, data)}`;
+    return w.changeAt(on, stationName(at, data));
   }
-  return `No train in ${TIMETABLE} links ${from.name} and ${to.name} directly or with one change.`;
+  return w.noLink(TIMETABLE, from.name, to.name);
 }
 
-function peopleFacts(from: Place, to: Place, ctx: Context): Fact[] {
+function peopleFacts(from: Place, to: Place, ctx: Context, w: Words): Fact[] {
   const out: Fact[] = [];
   if (to.state !== from.state) {
     const share = ctx.travel.shares[to.state]?.[from.state];
     if (share !== undefined && share >= 0.1) {
       out.push({
-        text: `${share.toFixed(1)}% of long-distance unreserved train trips from ${spoken(to.state)} in ${ctx.travel.year} went to ${spoken(from.state)}`,
-        source: 'EAC-PM migration study, railway ticket data',
+        text: w.shareOfTrips(share.toFixed(1), w.state(spoken(to.state)), ctx.travel.year, w.state(spoken(from.state))),
+        source: w.tripSource,
       });
     }
   }
@@ -178,33 +174,32 @@ function peopleFacts(from: Place, to: Place, ctx: Context): Fact[] {
       0,
     );
     if (people > 0) {
-      const origin = to.state2011 === to.state ? spoken(to.state) : `undivided ${to.state2011}`;
-      out.push({
-        text: `${people.toLocaleString('en-IN')} people from ${origin} lived in ${from.kind === 'station' || from.kind === 'town' ? `${from.name}'s district` : from.name}`,
-        source: 'Census 2011, the latest count; Census 2027 results are pending',
-      });
+      const origin = to.state2011 === to.state ? w.state(spoken(to.state)) : w.undivided(w.state(to.state2011));
+      const where = from.kind === 'station' || from.kind === 'town' ? w.districtOf(from.name) : from.name;
+      out.push({ text: w.peopleLived(people.toLocaleString('en-IN'), origin, where), source: w.censusSource });
     }
   }
   return out;
 }
 
 export function answer(from: Place, to: Place, ctx: Context): Answer {
+  const w = words(ctx.lang);
   const journey = findJourney(from, to, ctx.explore, ctx.date);
   const first = journey.options[0];
   const fares = first ? tripFares(first, ctx) : [];
   const specials = specialsFor(from, to, ctx);
-  const season = specials[0]?.season ?? null;
+  const season = specials[0] ? w.season(specials[0].season) : null;
   const out: Answer = {
-    title: `${from.name} → ${to.name}${ctx.date ? `, ${dayLabel(ctx.date)}` : ''}`,
-    headline: headline(journey, from, to, ctx.explore),
-    steps: first ? steps(first, ctx.explore, journey.dateMiss ? undefined : ctx.date) : [],
-    wait: first?.wait !== undefined ? hours(first.wait) : undefined,
-    notes: notes(journey, from, to, ctx.explore),
+    title: `${from.name} → ${to.name}${ctx.date ? `, ${dayLabel(ctx.date, 0, w)}` : ''}`,
+    headline: headline(journey, from, to, ctx.explore, w),
+    steps: first ? steps(first, ctx.explore, w, journey.dateMiss ? undefined : ctx.date) : [],
+    wait: first?.wait !== undefined ? hours(first.wait, w) : undefined,
+    notes: notes(journey, from, to, ctx.explore, w),
     fares,
-    alternatives: journey.options.slice(1).map((o) => `${o.legs.map((l) => trainLabel(l.train)).join(' + ')} · ${hours(o.minutes)}`),
+    alternatives: journey.options.slice(1).map((o) => `${o.legs.map((l) => trainLabel(l.train)).join(' + ')} · ${hours(o.minutes, w)}`),
     specials,
     season,
-    people: peopleFacts(from, to, ctx),
+    people: peopleFacts(from, to, ctx, w),
     facts: [],
     journey,
   };
@@ -215,7 +210,7 @@ export function answer(from: Place, to: Place, ctx: Context): Answer {
       text:
         s.length === 1
           ? `${s[0].train}: ${s[0].dep} → ${s[0].arr}, ${s[0].duration}`
-          : `${s.map((x) => x.train).join(', then ')}, ${hours(first.minutes)} with the change`,
+          : `${s.map((x) => x.train).join(w.then)}${w.withChange(hours(first.minutes, w))}`,
       source: TIMETABLE,
     });
   } else {
@@ -224,14 +219,16 @@ export function answer(from: Place, to: Place, ctx: Context): Answer {
   const cardFares = fares.filter((f) => CARD_CLASSES.includes(f.cls)).slice(0, 2);
   if (cardFares.length) {
     out.facts.push({
-      text: cardFares.map((f) => `${CLASS_NAMES[f.cls]} ${rupees(f.low)}${f.high > f.low ? `–${rupees(f.high).slice(1)}` : ''}`).join(' · '),
-      source: 'estimated from the official fare tables; check IRCTC',
+      text: cardFares
+        .map((f) => `${w.className(f.cls, CLASS_NAMES[f.cls])} ${rupees(f.low)}${f.high > f.low ? `–${rupees(f.high).slice(1)}` : ''}`)
+        .join(' · '),
+      source: w.fareSource,
     });
   }
   if (specials.length) {
     out.facts.push({
-      text: `${specials.length} special train${specials.length > 1 ? 's' : ''} to ${spoken(to.state)} ${ctx.date ? `on ${dayLabel(ctx.date)}` : 'this season'}`,
-      source: `${season}, official railway notices`,
+      text: w.specialsCount(specials.length, w.state(spoken(to.state)), ctx.date ? w.on(dayLabel(ctx.date, 0, w)).trim() : w.thisSeason),
+      source: `${season}, ${w.officialNotices}`,
     });
   }
   out.facts.push(...out.people);

@@ -4,6 +4,7 @@
 import type { Migration, RailTravel } from './card';
 import type { Places } from './places';
 import { isHomeward, type Special } from './festival';
+import { type Words, words } from './i18n';
 
 export interface ExploreTrain {
   n: string;
@@ -68,11 +69,11 @@ function dayNote(minute: number, start: number): string {
   return day > 0 ? ` (day ${day + 1})` : '';
 }
 
-export function hours(minutes: number): string {
+export function hours(minutes: number, w: Words = words()): string {
   const h = Math.floor(minutes / 60);
   const m = Math.round(minutes % 60);
-  if (!h) return `${m} min`;
-  return m ? `${h} h ${m} min` : `${h} h`;
+  if (!h) return w.minutes(m);
+  return m ? w.hoursMinutes(h, m) : w.wholeHours(h);
 }
 
 /** "12627 Karnataka Express", or just the number when the timetable prints no name. */

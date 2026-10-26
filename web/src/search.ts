@@ -5,6 +5,7 @@ import { drawCard } from './card';
 import { CLASS_NAMES } from './explore';
 import { loadSearch } from './exploreUi';
 import { coverage, type Special } from './festival';
+import { lang, ui, words } from './i18n';
 import { legPath } from './journey';
 import { buildPlaces, type Place, type Places, searchPlaces, spoken } from './places';
 import { attachSuggest } from './suggest';
@@ -30,7 +31,6 @@ interface Inputs {
 const $ = <T extends HTMLElement>(selector: string) => document.querySelector<T>(selector)!;
 const esc = (s: string) => s.replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' })[c]!);
 const rupees = (n: number) => n.toLocaleString('en-IN');
-const DATE = new Intl.DateTimeFormat('en-IN', { day: 'numeric', month: 'short' });
 
 function today(): string {
   return new Date().toISOString().slice(0, 10);
@@ -42,7 +42,15 @@ interface Coverage {
   running: boolean; // some season's specials are still running
 }
 
+/** "17 Oct" or "17 अक्टू" for a YYYY-MM-DD date. */
+function shortDate(iso: string): string {
+  const [, m, d] = iso.split('-').map(Number);
+  return `${d} ${words(lang()).month(m - 1)}`;
+}
+
 function renderAnswer(a: Answer, cov: Coverage): string {
+  const t = ui();
+  const w = words(lang());
   const steps = a.steps
     .map(
       (s, i) => `
@@ -51,31 +59,31 @@ function renderAnswer(a: Answer, cov: Coverage): string {
         <strong>${esc(s.train)}</strong>
         <span class="times">${esc(s.from)} <b>${esc(s.dep)}</b> → ${esc(s.to)} <b>${esc(s.arr)}</b></span>
         <span class="small">${esc(s.duration)} · ${esc(s.days)}</span>
-        ${i === 0 && a.wait ? `<span class="wait">Change here. Wait about ${esc(a.wait)}.</span>` : ''}
+        ${i === 0 && a.wait ? `<span class="wait">${esc(t.change(a.wait))}</span>` : ''}
       </li>`,
     )
     .join('');
   const fares = a.fares.length
-    ? `<h3>Fare per person (estimate)</h3>
+    ? `<h3>${t.fareTitle}</h3>
        <ul class="fares">${a.fares
-         .map((f) => `<li><span>${esc(CLASS_NAMES[f.cls] ?? f.cls)}</span> <b>₹${rupees(f.low)}${f.high > f.low ? `–${rupees(f.high)}` : ''}</b></li>`)
+         .map((f) => `<li><span>${esc(w.className(f.cls, CLASS_NAMES[f.cls] ?? f.cls))}</span> <b>₹${rupees(f.low)}${f.high > f.low ? `–${rupees(f.high)}` : ''}</b></li>`)
          .join('')}</ul>
-       <p class="small">From the official fare tables. Meals, Tatkal and dynamic pricing are not included.</p>`
+       <p class="small">${t.fareNote}</p>`
     : '';
   // Say how complete the list is, so a missing special reads as "not listed", not "none".
-  const scope = `From official notices of ${cov.zones} railway zones, checked ${DATE.format(new Date(cov.checked))}. More may run: check IRCTC.`;
+  const scope = t.scope(cov.zones, shortDate(cov.checked));
   const specials = a.specials.length
-    ? `<h3>Special trains this season</h3>
+    ? `<h3>${t.specialsTitle}</h3>
        <p class="small">${esc(a.season ?? '')}. ${esc(scope)}</p>
        <ul class="specials">${a.specials
          .slice(0, 5)
          .map(
            (s) =>
-             `<li><strong>${esc(s.n)}</strong> ${esc(s.name)}<span class="small">${esc(s.days.join(', ') || 'Dates in notice')}${s.last ? ` · until ${DATE.format(new Date(s.last))}` : ''} · <a href="${esc(s.source)}" target="_blank" rel="noopener">notice ↗</a></span></li>`,
+             `<li><strong>${esc(s.n)}</strong> ${esc(s.name)}<span class="small">${esc(s.days.map(w.weekday).join(', ') || t.datesInNotice)}${s.last ? ` · ${esc(t.until(shortDate(s.last)))}` : ''} · <a href="${esc(s.source)}" target="_blank" rel="noopener">${t.notice}</a></span></li>`,
          )
          .join('')}</ul>`
     : cov.running
-      ? `<h3>Special trains this season</h3><p class="small">None listed for this route yet. ${esc(scope)}</p>`
+      ? `<h3>${t.specialsTitle}</h3><p class="small">${t.noneListed} ${esc(scope)}</p>`
       : '';
   const people = a.people;
   return `
@@ -83,14 +91,14 @@ function renderAnswer(a: Answer, cov: Coverage): string {
     <p class="headline">${esc(a.headline)}</p>
     ${a.notes.map((n) => `<p class="note">${esc(n)}</p>`).join('')}
     ${steps ? `<ol class="steps">${steps}</ol>` : ''}
-    ${a.alternatives.length ? `<details><summary>${a.alternatives.length} more option${a.alternatives.length > 1 ? 's' : ''}</summary><ul>${a.alternatives.map((x) => `<li>${esc(x)}</li>`).join('')}</ul></details>` : ''}
+    ${a.alternatives.length ? `<details><summary>${t.moreOptions(a.alternatives.length)}</summary><ul>${a.alternatives.map((x) => `<li>${esc(x)}</li>`).join('')}</ul></details>` : ''}
     ${fares}
-    ${a.steps.length ? '<p><a class="button" href="https://www.irctc.co.in/" target="_blank" rel="noopener">Check seats and book on IRCTC ↗</a></p>' : ''}
+    ${a.steps.length ? `<p><a class="button" href="https://www.irctc.co.in/" target="_blank" rel="noopener">${t.book}</a></p>` : ''}
     ${specials}
-    ${people.length ? `<h3>You are not alone</h3><ul class="people">${people.map((f) => `<li>${esc(f.text)} <span class="small">(${esc(f.source)})</span></li>`).join('')}</ul>` : ''}
+    ${people.length ? `<h3>${t.notAlone}</h3><ul class="people">${people.map((f) => `<li>${esc(f.text)} <span class="small">(${esc(f.source)})</span></li>`).join('')}</ul>` : ''}
     <div class="actions">
-      <button id="make-card" type="button" class="primary">Share as a card</button>
-      <button id="new-search" type="button">New search</button>
+      <button id="make-card" type="button" class="primary">${t.shareCard}</button>
+      <button id="new-search" type="button">${t.newSearch}</button>
     </div>`;
 }
 
@@ -116,7 +124,7 @@ export function setupSearch(inputs: Inputs) {
   const cardHint = $<HTMLParagraphElement>('#card-hint');
 
   let places: Place[] | null = null;
-  let current: { answer: Answer; from: Place; to: Place } | null = null;
+  let current: { answer: Answer; from: Place; to: Place; date?: string } | null = null;
   let blob: Blob | null = null;
 
   async function ready() {
@@ -136,29 +144,10 @@ export function setupSearch(inputs: Inputs) {
     return searchPlaces(text, [...all, ...towns], 1)[0] ?? null;
   }
 
-  async function search() {
-    hint.textContent = 'Looking up trains…';
-    const { loaded, places: all } = await ready();
-    const [a, b] = await Promise.all([
-      resolve(from.value, all, loaded.places),
-      resolve(to.value, all, loaded.places),
-    ]);
-    if (!a || !b) {
-      hint.textContent = `We could not find “${!a ? from.value : to.value}”. Try a district, city or station name.`;
-      return;
-    }
-    if (a.label === b.label) {
-      hint.textContent = 'From and To are the same place. Pick where you live and where home is.';
-      return;
-    }
-    from.value = a.label;
-    to.value = b.label;
-    // Put the keyboard away on phones so the answer is visible.
-    if (document.activeElement instanceof HTMLElement && form.contains(document.activeElement)) document.activeElement.blur();
-    hint.textContent = '';
-    const date = when.value && when.value >= today() ? when.value : undefined;
-    const ans = answer(a, b, { ...loaded, specials: inputs.specials(), today: today(), date });
-    current = { answer: ans, from: a, to: b };
+  /** Write the answer into the page, in the current language. */
+  function show(a: Place, b: Place, date: string | undefined, loaded: Awaited<ReturnType<typeof ready>>['loaded']) {
+    const ans = answer(a, b, { ...loaded, specials: inputs.specials(), today: today(), date, lang: lang() });
+    current = { answer: ans, from: a, to: b, date };
     const listed = inputs.specials();
     const { zones, checked } = coverage(listed);
     const running = listed.some((x) => !x.last || x.last >= today());
@@ -172,6 +161,37 @@ export function setupSearch(inputs: Inputs) {
       inputs.onRoute(null);
       from.select();
     });
+    return ans;
+  }
+
+  // A new language redraws the answer on screen, without moving the map again.
+  document.addEventListener('langchange', async () => {
+    if (!current || result.hidden) return;
+    show(current.from, current.to, current.date, (await ready()).loaded);
+  });
+
+  async function search() {
+    hint.textContent = ui().looking;
+    const { loaded, places: all } = await ready();
+    const [a, b] = await Promise.all([
+      resolve(from.value, all, loaded.places),
+      resolve(to.value, all, loaded.places),
+    ]);
+    if (!a || !b) {
+      hint.textContent = ui().notFound(!a ? from.value : to.value);
+      return;
+    }
+    if (a.label === b.label) {
+      hint.textContent = ui().same;
+      return;
+    }
+    from.value = a.label;
+    to.value = b.label;
+    // Put the keyboard away on phones so the answer is visible.
+    if (document.activeElement instanceof HTMLElement && form.contains(document.activeElement)) document.activeElement.blur();
+    hint.textContent = '';
+    const date = when.value && when.value >= today() ? when.value : undefined;
+    const ans = show(a, b, date, loaded);
     const url = new URL(location.href);
     url.searchParams.set('from', a.label);
     url.searchParams.set('to', b.label);
@@ -204,10 +224,10 @@ export function setupSearch(inputs: Inputs) {
     blob = null;
     share.disabled = true;
     download.hidden = true;
-    cardHint.textContent = 'Making your card…';
+    cardHint.textContent = ui().making;
     await document.fonts.ready;
     const { answer: a, from: p, to: q } = current;
-    drawCard(canvas, { title: a.title, from: [p.lon, p.lat], to: [q.lon, q.lat], lines: a.facts }, inputs.states() as never, inputs.siteUrl);
+    drawCard(canvas, { title: a.title, from: [p.lon, p.lat], to: [q.lon, q.lat], lines: a.facts, kicker: ui().cardKicker }, inputs.states() as never, inputs.siteUrl);
     canvas.setAttribute('aria-label', `Card: ${a.title}. ${a.facts.map((l) => `${l.text} (${l.source})`).join('. ')}`);
     // Make the file before the tap: some browsers refuse to share once an await
     // has passed inside the click handler.
@@ -218,7 +238,7 @@ export function setupSearch(inputs: Inputs) {
     download.hidden = false;
     const file = new File([blob], download.download, { type: 'image/png' });
     share.disabled = !(navigator.canShare && navigator.canShare({ files: [file] }));
-    cardHint.textContent = share.disabled ? 'Download the card, or press and hold it to save.' : 'Share it, or download it.';
+    cardHint.textContent = share.disabled ? ui().downloadOnly : ui().shareOrDownload;
   }
 
   warm = ready;

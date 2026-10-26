@@ -75,11 +75,27 @@ body:not(.answered) .panel {
   }
 }
 
+.brand-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin: 0 0 6px;
+}
+
+/* The language switch: written in the language it switches to, so a reader spots it. */
+button.lang {
+  min-height: 44px;
+  min-width: 44px;
+  padding: 6px 14px;
+  font-weight: 700;
+}
+
 .brand {
   display: flex;
   align-items: center;
   gap: 8px;
-  margin: 0 0 6px;
+  margin: 0;
   color: var(--accent);
   font-weight: 700;
   font-size: 0.95rem;

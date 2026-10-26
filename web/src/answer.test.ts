@@ -149,3 +149,20 @@ describe('dates', () => {
     expect(afterSeason).toEqual([]);
   });
 });
+
+describe('Hindi', () => {
+  it('answers in Hindi, keeping train and station names as printed', () => {
+    const a = answer(place('Bengaluru'), place('Patna, Bihar'), { ...ctx, date: '2026-11-06', lang: 'hi' });
+    expect(a.title).toBe('Bengaluru → Patna, शुक्र 6 नव');
+    expect(a.headline).toBe('शुक्र 6 नव को सबसे तेज़ सीधी ट्रेन');
+    expect(a.steps[0].duration).toMatch(/^\d+ घंटे \d+ मिनट$/);
+    expect(a.steps[0].days).toMatch(/^चलती है: |^रोज़$/);
+    expect(a.steps[0].arr).toMatch(/\(\+2 दिन\)$/);
+    expect(a.steps[0].train).toMatch(/^\d{5} [A-Za-z]/);
+    expect(a.facts.map((f) => f.text).join(' ')).not.toMatch(/\b(Runs|Daily|Sleeper|special trains?|people from)\b/);
+  });
+
+  it('keeps English the default', () => {
+    expect(answer(place('Bengaluru'), place('Patna, Bihar'), ctx).headline).toMatch(/^(Fastest direct|Direct) train$/);
+  });
+});

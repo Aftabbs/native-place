@@ -15,6 +15,7 @@ export interface CardFacts {
   from: [number, number];
   to: [number, number];
   lines: { text: string; source: string }[];
+  kicker?: string; // the line above the title, in the reader's language
 }
 
 // ---- drawing -------------------------------------------------------------
@@ -74,7 +75,7 @@ export function drawCard(canvas: HTMLCanvasElement, facts: CardFacts, states: St
 
   ctx.fillStyle = '#ffb347';
   ctx.font = font(40, 600);
-  ctx.fillText('NATIVE PLACE · MY TRAIN TO NATIVE', 90, 140);
+  ctx.fillText(facts.kicker ?? 'NATIVE PLACE · MY TRAIN TO NATIVE', 90, 140);
   ctx.fillStyle = '#f3f1ea';
   ctx.font = font(72, 700);
   const titleLines = wrap(ctx, facts.title, W - 180);
