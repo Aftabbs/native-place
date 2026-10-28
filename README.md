@@ -5,7 +5,7 @@ gives the fastest train in the official 2026 timetable, an estimated fare range,
 trains running this season, and how many people make the same trip, with a source next to
 every figure.
 
-**Live:** [native-place.pages.dev](https://native-place.pages.dev/) (mirror: [aftabbs.github.io/native-place](https://aftabbs.github.io/native-place/))
+**Live:** [nativeplace.vercel.app](https://nativeplace.vercel.app/) (mirror: [aftabbs.github.io/native-place](https://aftabbs.github.io/native-place/))
 
 <p>
   <img src="docs/screenshot-laptop.png" alt="The search panel showing Bengaluru to Patna: the fastest direct train, fares and special trains, with the route lit in gold on a dark map of India" width="68%">
@@ -33,7 +33,7 @@ every figure.
   and how many people from home live where you do (Census 2011).
 - **A card to share** with every line sourced, and a link that opens the same answer. Shared
   links show a preview image on WhatsApp and social apps.
-- **A page per popular route.** [/train/](https://native-place.pages.dev/train/) lists about
+- **A page per popular route.** [/train/](https://nativeplace.vercel.app/train/) lists about
   370 city-to-hometown routes (Bengaluru to Patna, Delhi to Darbhanga), each a static page
   built at `npm run build` from the same answers, so search engines can find them. The build
   also writes `sitemap.xml` and `robots.txt`.
@@ -56,7 +56,7 @@ every figure.
 | Boundaries | Survey of India outline via [DataMeet maps](https://github.com/datameet/maps) | — |
 
 Census 2027 migration tables are not yet published; the answer shows the 2011 count with its
-date beside the 2023 rail-travel figure. The [methods page](https://native-place.pages.dev/methods.html)
+date beside the 2023 rail-travel figure. The [methods page](https://nativeplace.vercel.app/methods.html)
 explains every check and limit.
 
 ### How the timetable is checked

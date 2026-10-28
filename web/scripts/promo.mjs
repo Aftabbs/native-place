@@ -60,7 +60,7 @@ const cue = (text) => cues.push({ at: Date.now() / 1000 - t0, text });
 const pause = (ms) => page.waitForTimeout(ms);
 
 // Scene 1: the hook, the live map.
-cue('Going to native this Diwali?');
+cue('Going to native?');
 await pause(2000);
 
 // Scene 2: a small town, on a date.

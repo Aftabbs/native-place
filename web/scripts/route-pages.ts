@@ -8,7 +8,7 @@ import { answer, type Answer, type Context } from '../src/answer';
 import { CLASS_NAMES, type ExploreData } from '../src/explore';
 import { buildPlaces, type Place, type Places, searchPlaces } from '../src/places';
 
-export const SITE = 'https://native-place.pages.dev';
+export const SITE = 'https://nativeplace.vercel.app';
 
 // Where people move for work, and the hometowns most of them travel back to.
 const CITIES = ['Bengaluru', 'Mumbai', 'Delhi', 'Chennai', 'Hyderabad', 'Pune', 'Kolkata', 'Ahmedabad', 'Surat'];
