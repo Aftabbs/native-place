@@ -6,6 +6,7 @@ import { join } from 'node:path';
 
 import { answer, type Answer, type Context } from '../src/answer';
 import { CLASS_NAMES, type ExploreData } from '../src/explore';
+import type { Special } from '../src/festival';
 import { buildPlaces, type Place, type Places, searchPlaces } from '../src/places';
 
 export const SITE = 'https://nativeplace.vercel.app';
@@ -83,6 +84,8 @@ table { width: 100%; border-collapse: collapse; }
 th, td { text-align: left; padding: 8px 4px; border-bottom: 1px solid var(--line); }
 .button { display: inline-block; min-height: 44px; padding: 11px 18px; border-radius: 10px; background: var(--accent); color: #111; font-weight: 700; text-decoration: none; }
 ul.routes { columns: 2 220px; padding-left: 18px; }
+ul.specials { list-style: none; padding: 0; }
+ul.specials li { padding: 10px 0; border-bottom: 1px solid var(--line); }
 footer { margin-top: 40px; color: var(--muted); font-size: .85rem; }
 `;
 
@@ -189,6 +192,51 @@ ${sections}`;
   });
 }
 
+
+/** Special trains that are still running on `today` or have not started yet, by destination state. */
+export function specialsByState(dataDir: string, today: string): [string, Special[]][] {
+  const all = JSON.parse(readFileSync(join(dataDir, 'specials-2026.json'), 'utf8')) as Special[];
+  const byState = new Map<string, Special[]>();
+  for (const s of all.filter((x) => (x.last ?? '9999') >= today)) {
+    const state = s.dState ?? 'Other states';
+    (byState.get(state) ?? byState.set(state, []).get(state)!).push(s);
+  }
+  for (const list of byState.values()) list.sort((a, b) => (a.first ?? '').localeCompare(b.first ?? '') || a.n.localeCompare(b.n));
+  return [...byState].sort((a, b) => b[1].length - a[1].length || a[0].localeCompare(b[0]));
+}
+
+const shortDate = (iso: string) =>
+  new Date(`${iso}T00:00:00Z`).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', timeZone: 'UTC' });
+
+function specialsHtml(groups: [string, Special[]][], verified: string): string {
+  const total = groups.reduce((n, [, list]) => n + list.length, 0);
+  const sections = groups
+    .map(
+      ([state, list]) => `<h2 id="${slugOf(state)}">To ${esc(state)} (${list.length})</h2>
+<ul class="specials">${list
+        .map(
+          (s) => `<li><b>${esc(s.n)}</b> ${esc(s.name)}<br /><span class="small">${s.dep ? `Leaves ${esc(s.dep)} · ` : ''}${esc(s.days.join(', '))}${s.first && s.last ? ` · ${shortDate(s.first)} to ${shortDate(s.last)}` : ''} · <a href="${esc(s.source)}" rel="noopener">railway notice</a></span></li>`,
+        )
+        .join('')}</ul>`,
+    )
+    .join('\n');
+  const jump = groups.map(([state, list]) => `<a href="#${slugOf(state)}">${esc(state)}</a> (${list.length})`).join(' · ');
+  const body = `<h1>Diwali and Chhath 2026 special trains</h1>
+<p class="lead">${total} festival special trains still to run or running now, grouped by where they go. Copied from the zonal railways' own notices and checked on ${shortDate(verified)}.</p>
+<p class="small">Covers 9 of the 17 railway zones. A train missing here may still exist: check the notice on your zone's website or IRCTC before you plan around it.</p>
+<p><a class="button" href="../">Find the train to your hometown</a></p>
+<p class="small">Jump to: ${jump}</p>
+${sections}
+<p class="small">Dates and days come from each notice. A special can be cancelled or rescheduled after it is published.</p>`;
+  return shell({
+    title: 'Diwali and Chhath 2026 special trains: full list by state',
+    description: `${total} festival special trains for Diwali and Chhath 2026 with days, timings and railway notices, grouped by destination state. Updated from the zonal railways' notices.`,
+    path: 'specials/',
+    body,
+    root: '../',
+  });
+}
+
 /** Writes train/<route>/index.html, train/index.html, sitemap.xml and robots.txt into outDir. */
 export function writeRoutePages(dataDir: string, outDir: string, today: string): number {
   const pages = routePages(dataDir, today);
@@ -198,7 +246,11 @@ export function writeRoutePages(dataDir: string, outDir: string, today: string):
     writeFileSync(join(dir, 'index.html'), routeHtml(page, pages));
   }
   writeFileSync(join(outDir, 'train', 'index.html'), indexHtml(pages));
-  const urls = ['', 'methods.html', 'train/', ...pages.map((p) => `train/${p.slug}/`)];
+  const groups = specialsByState(dataDir, today);
+  const verified = groups.flatMap(([, list]) => list.map((x) => x.verified)).sort().pop() ?? today;
+  mkdirSync(join(outDir, 'specials'), { recursive: true });
+  writeFileSync(join(outDir, 'specials', 'index.html'), specialsHtml(groups, verified));
+  const urls = ['', 'methods.html', 'train/', 'specials/', ...pages.map((p) => `train/${p.slug}/`)];
   writeFileSync(
     join(outDir, 'sitemap.xml'),
     `<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n${urls

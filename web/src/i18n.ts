@@ -259,6 +259,7 @@ const UI = {
       `${season}: ${n} verified special trains from the big cities, from ${zones} railway zones' notices (checked ${day}). More may run.`,
     methods: 'How this was made',
     routes: 'Popular routes',
+    specialsList: 'Festival special trains',
     timetableLine: 'Official timetable: Trains at a Glance 2026. Weekly trains are shown every day.',
     timeOfDay: 'Time of day',
     summary: (runs: string, at: string, moving: string) =>
@@ -320,6 +321,7 @@ const UI = {
       `${season}: बड़े शहरों से ${n} जाँची हुई स्पेशल ट्रेनें, ${zones} रेलवे ज़ोन की सूचनाओं से (${day} को जाँचा)। और भी चल सकती हैं।`,
     methods: 'यह कैसे बना',
     routes: 'लोकप्रिय रास्ते',
+    specialsList: 'त्योहार की विशेष गाड़ियाँ',
     timetableLine: 'सरकारी टाइमटेबल: Trains at a Glance 2026। हफ़्ते में एक-दो दिन चलने वाली ट्रेनें भी नक्शे पर हर दिन दिखती हैं।',
     timeOfDay: 'दिन का समय',
     summary: (runs: string, at: string, moving: string) =>
